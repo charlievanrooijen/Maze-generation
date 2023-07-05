@@ -8,11 +8,10 @@ public class MazeController : MonoBehaviour
     public TMP_InputField heightInput;
     public Button generateButton;
     public GameObject parent; // parent GameObject for all cells
-    public GameObject wallPrefab; // Prefab for walls
-    public GameObject pathPrefab; // Prefab for paths
+    public GameObject cellPrefab; // Prefab for the cells
 
     private MazeGenerator mazeGenerator;
-    private Cell[,] maze;
+    private CellData[,] maze;
 
     private void Start()
     {
@@ -48,22 +47,32 @@ public class MazeController : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                var cell = maze[x, y];
-                var position = new Vector3(x, y, 0); // Changed here
+                var cellData = maze[x, y];
+                var position = new Vector3(x * 1f, y * 1f, 0); 
 
-                GameObject prefab;
+                var cellPrefabInstance = Instantiate(cellPrefab, position, Quaternion.identity, parent.transform);
+                var cellPrefabController = cellPrefabInstance.GetComponent<CellPrefabController>();
 
-                if (cell.Walls["Top"] || cell.Walls["Right"] || cell.Walls["Bottom"] || cell.Walls["Left"])
-                {
-                    prefab = wallPrefab;
-                }
-                else
-                {
-                    prefab = pathPrefab;
-                }
-
-                var instance = Instantiate(prefab, position, Quaternion.identity, parent.transform);
+                cellPrefabController.SetWallState("Top", cellData.Walls["Top"]);
+                cellPrefabController.SetWallState("Right", cellData.Walls["Right"]);
+                cellPrefabController.SetWallState("Bottom", cellData.Walls["Bottom"]);
+                cellPrefabController.SetWallState("Left", cellData.Walls["Left"]);
             }
         }
+    }
+
+    public int GetMazeWidth()
+    {
+        return maze.GetLength(0);
+    }
+    
+    public int GetMazeHeight()
+    {
+        return maze.GetLength(1);
+    }
+    
+    public bool IsMazeGenerated()
+    {
+        return maze != null;
     }
 }

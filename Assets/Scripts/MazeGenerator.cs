@@ -1,159 +1,105 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class MazeGenerator
 {
-    private Cell[,] maze;
+    private CellData[,] maze;
     private int width, height;
     private System.Random random;
+    private Stack<CellData> stack;
 
     public MazeGenerator(int width, int height)
     {
         this.width = width;
         this.height = height;
         this.random = new System.Random();
-        maze = new Cell[width, height];
+        this.stack = new Stack<CellData>();
+        maze = new CellData[width, height];
 
-        // Initialize all cells as walls and unvisited
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                maze[x, y] = new Cell(x, y);
+                maze[x, y] = new CellData(x, y);
             }
         }
     }
 
     public void GenerateMaze()
     {
-        int startX = random.Next(1, width - 1);
-        int startY = random.Next(1, height - 1);
-        int endX = random.Next(1, width - 1);
-        int endY = random.Next(1, height - 1);
+        CellData currentCell = maze[random.Next(width), random.Next(height)];
+        currentCell.IsVisited = true;
+        stack.Push(currentCell);
 
-        maze[startX, startY].IsVisited = true;
-        maze[endX, endY].IsVisited = true;
-
-        ConnectCells(startX, startY, endX, endY);
-    }
-
-    private void ConnectCells(int startX, int startY, int endX, int endY)
-    {
-        int currentX = startX;
-        int currentY = startY;
-
-        while (currentX != endX || currentY != endY)
+        while (stack.Count > 0)
         {
-            List<Cell> neighbors = GetValidNeighbors(currentX, currentY);
+            CellData cell = stack.Pop();
+            List<CellData> unvisitedNeighbours = GetValidNeighbors(cell.X, cell.Y).Where(c => !c.IsVisited).ToList();
 
-            if (neighbors.Count > 0)
+            if (unvisitedNeighbours.Any())
             {
-                Cell nextCell = neighbors[random.Next(neighbors.Count)];
+                stack.Push(cell);
 
-                int nextX = nextCell.X;
-                int nextY = nextCell.Y;
+                CellData chosenCell = unvisitedNeighbours[random.Next(unvisitedNeighbours.Count)];
+                RemoveWall(cell, chosenCell);
 
-                RemoveWall(currentX, currentY, nextX, nextY);
-                CarvePath(currentX, currentY, nextX, nextY);
-
-                maze[nextX, nextY].IsVisited = true;
-
-                currentX = nextX;
-                currentY = nextY;
-            }
-            else
-            {
-                break;
+                chosenCell.IsVisited = true;
+                stack.Push(chosenCell);
             }
         }
     }
 
-    private List<Cell> GetValidNeighbors(int x, int y)
+    private List<CellData> GetValidNeighbors(int x, int y)
     {
-        List<Cell> neighbors = new List<Cell>();
+        List<CellData> neighbors = new List<CellData>();
 
-        if (IsValid(x, y + 1) && !maze[x, y + 1].IsVisited)
+        if (IsValid(x, y + 1))
         {
             neighbors.Add(maze[x, y + 1]);
         }
-        if (IsValid(x, y - 1) && !maze[x, y - 1].IsVisited)
+        if (IsValid(x, y - 1))
         {
             neighbors.Add(maze[x, y - 1]);
         }
-        if (IsValid(x + 1, y) && !maze[x + 1, y].IsVisited)
+        if (IsValid(x + 1, y))
         {
             neighbors.Add(maze[x + 1, y]);
         }
-        if (IsValid(x - 1, y) && !maze[x - 1, y].IsVisited)
+        if (IsValid(x - 1, y))
         {
             neighbors.Add(maze[x - 1, y]);
         }
 
-        Shuffle(neighbors);
         return neighbors;
     }
 
-    private void Shuffle<T>(List<T> list)
+    private void RemoveWall(CellData currentCell, CellData nextCell)
     {
-        int n = list.Count;
-        while (n > 1)
+        if (currentCell.X == nextCell.X)
         {
-            n--;
-            int k = random.Next(n + 1);
-            T value = list[k];
-            list[k] = list[n];
-            list[n] = value;
-        }
-    }
-
-    private void RemoveWall(int currentX, int currentY, int nextX, int nextY)
-    {
-        if (currentX == nextX)
-        {
-            if (currentY < nextY)
+            if (currentCell.Y < nextCell.Y)
             {
-                maze[currentX, currentY].Walls["Top"] = false;
-                maze[nextX, nextY].Walls["Bottom"] = false;
+                currentCell.Walls["Top"] = false;
+                nextCell.Walls["Bottom"] = false;
             }
             else
             {
-                maze[currentX, currentY].Walls["Bottom"] = false;
-                maze[nextX, nextY].Walls["Top"] = false;
+                currentCell.Walls["Bottom"] = false;
+                nextCell.Walls["Top"] = false;
             }
         }
-        else if (currentY == nextY)
+        else
         {
-            if (currentX < nextX)
+            if (currentCell.X < nextCell.X)
             {
-                maze[currentX, currentY].Walls["Right"] = false;
-                maze[nextX, nextY].Walls["Left"] = false;
+                currentCell.Walls["Right"] = false;
+                nextCell.Walls["Left"] = false;
             }
             else
             {
-                maze[currentX, currentY].Walls["Left"] = false;
-                maze[nextX, nextY].Walls["Right"] = false;
-            }
-        }
-    }
-
-    private void CarvePath(int currentX, int currentY, int nextX, int nextY)
-    {
-        if (currentX != nextX)
-        {
-            int min = Math.Min(currentX, nextX);
-            for (int i = min; i <= min + 1; i++)
-            {
-                maze[i, currentY].Walls["Top"] = false;
-                maze[i, currentY].Walls["Bottom"] = false;
-            }
-        }
-        else if (currentY != nextY)
-        {
-            int min = Math.Min(currentY, nextY);
-            for (int i = min; i <= min + 1; i++)
-            {
-                maze[currentX, i].Walls["Left"] = false;
-                maze[currentX, i].Walls["Right"] = false;
+                currentCell.Walls["Left"] = false;
+                nextCell.Walls["Right"] = false;
             }
         }
     }
@@ -163,7 +109,7 @@ public class MazeGenerator
         return (x >= 0 && y >= 0 && x < width && y < height);
     }
 
-    public Cell[,] GetMaze()
+    public CellData[,] GetMaze()
     {
         return maze;
     }

@@ -1,13 +1,15 @@
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
-public class Cell
+public class CellData
 {
     public int X { get; private set; }
     public int Y { get; private set; }
     public bool IsVisited { get; set; }
     public Dictionary<string, bool> Walls { get; private set; }
 
-    public Cell(int x, int y)
+    public CellData(int x, int y)
     {
         X = x;
         Y = y;
