@@ -9,6 +9,7 @@ public class MazeController : MonoBehaviour
     public Button generateButton;
     public GameObject parent; // parent GameObject for all cells
     public GameObject cellPrefab; // Prefab for the cells
+    public float paddingFactor = 1.2f; // Padding factor for the camera
 
     private MazeGenerator mazeGenerator;
     private CellData[,] maze;
@@ -35,7 +36,30 @@ public class MazeController : MonoBehaviour
 
         UpdateTilemap();
 
-        parent.transform.localPosition = new Vector3(-width / 2f, -height / 2f, 0);
+        // Calculate the center of the maze
+        Vector3 centerOffset = new Vector3(GetMazeWidth() / 2f, GetMazeHeight() / 2f, 0);
+
+        // Subtract the center offset from each cell's position
+        foreach (Transform child in parent.transform)
+        {
+            child.position -= centerOffset;
+        }
+
+        SetCamera();
+    }
+
+    private void SetCamera()
+    {
+        if ((float)GetMazeWidth() / GetMazeHeight() > Camera.main.aspect)
+        {
+            // Maze is wider than the viewport, so fit to width
+            Camera.main.orthographicSize = GetMazeWidth() / 2f / Camera.main.aspect * paddingFactor;
+        }
+        else
+        {
+            // Maze fits within the viewport, so fit to height
+            Camera.main.orthographicSize = GetMazeHeight() / 2f * paddingFactor;
+        }
     }
 
     private void UpdateTilemap()
