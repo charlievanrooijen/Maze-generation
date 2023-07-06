@@ -28,10 +28,11 @@ public class MazeGenerator
 
     public void GenerateMaze()
     {
-        CellData currentCell = maze[random.Next(width), random.Next(height)];
+        int startX = random.Next(1, width - 1);
+        CellData currentCell = maze[startX, 0];
         currentCell.IsVisited = true;
         stack.Push(currentCell);
-
+    
         while (stack.Count > 0)
         {
             CellData cell = stack.Pop();
@@ -40,14 +41,18 @@ public class MazeGenerator
             if (unvisitedNeighbours.Any())
             {
                 stack.Push(cell);
-
                 CellData chosenCell = unvisitedNeighbours[random.Next(unvisitedNeighbours.Count)];
                 RemoveWall(cell, chosenCell);
-
                 chosenCell.IsVisited = true;
                 stack.Push(chosenCell);
             }
         }
+
+        int startCellX = random.Next(1, width - 1);
+        maze[startCellX, height - 1].Walls["Top"] = false;
+
+        int endCellX = random.Next(1, width - 1);
+        maze[endCellX, 0].Walls["Bottom"] = false;
     }
 
     private List<CellData> GetValidNeighbors(int x, int y)
@@ -106,7 +111,11 @@ public class MazeGenerator
 
     private bool IsValid(int x, int y)
     {
-        return (x >= 0 && y >= 0 && x < width && y < height);
+        if (x < 0 || y < 0 || x >= width || y >= height)
+        {
+            return false;
+        }
+        return true;
     }
 
     public CellData[,] GetMaze()
